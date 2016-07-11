@@ -26,8 +26,16 @@ if !exists('g:clang_cpp_options')
   let g:clang_cpp_options = ''
 endif
 
+if !exists('g:clang_cuda_options')
+  let g:clang_cuda_options = ''
+endif
+
 if !exists('g:clang_cpp_completeopt')
   let g:clang_cpp_completeopt = 'longest,menuone,preview'
+endif
+
+if !exists('g:clang_cuda_completeopt')
+  let g:clang_cuda_completeopt = 'longest,menuone,preview'
 endif
 
 if !exists('g:clang_debug')
@@ -125,7 +133,7 @@ if !exists('g:clang_verbose_pmenu')
 endif
 
 " Init on c/c++ files
-au FileType c,cpp call <SID>ClangCompleteInit(0)
+au FileType c,cpp,cuda call <SID>ClangCompleteInit(0)
 "}}}
 "{{{ s:IsValidFile
 " A new file is also a valid file
@@ -137,7 +145,7 @@ func! s:IsValidFile()
   endif
   " Please don't use filereadable to test, as the new created file is also
   " unreadable before writting to disk.
-  return &filetype == "c" || &filetype == "cpp"
+  return &filetype == "c" || &filetype == "cpp" || &filetype == "cuda"
 endf
 "}}}
 "{{{ s:PDebug
@@ -193,6 +201,8 @@ func! s:BufVarSet()
     exe 'set completeopt='.g:clang_c_completeopt
   elseif &filetype == 'cpp' && !empty(g:clang_cpp_completeopt)
     exe 'set completeopt='.g:clang_cpp_completeopt
+  elseif &filetype == 'cuda' && !empty(g:clang_cuda_completeopt)
+    exe 'set completeopt='.g:clang_cuda_completeopt
   endif
 endf
 "}}}
@@ -627,7 +637,7 @@ func! s:ParseCompletePoint()
     let l:ismber = 0
     if (l:col >= 1 && l:line[l:col - 1] == '.')
         \ || (l:col >= 2 && l:line[l:col - 1] == '>' && l:line[l:col - 2] == '-')
-        \ || (l:col >= 2 && l:line[l:col - 1] == ':' && l:line[l:col - 2] == ':' && &filetype == 'cpp')
+        \ || (l:col >= 2 && l:line[l:col - 1] == ':' && l:line[l:col - 2] == ':' && (&filetype == 'cpp' || &filetype == 'cuda'))
       let l:start  = l:col
       let l:ismber = 1
     endif
@@ -1006,6 +1016,11 @@ func! s:ClangCompleteInit(force)
     if ! l:is_ow
       let b:clang_options .= g:clang_cpp_options
     endif
+  elseif &filetype == 'cuda'
+    let b:clang_options .= ' -x cuda '
+    if ! l:is_ow
+      let b:clang_options .= g:clang_cuda_options
+    endif
   endif
 
   " add current dir to include path
@@ -1068,7 +1083,7 @@ func! s:ClangCompleteInit(force)
   if g:clang_auto   " Auto completion
     inoremap <expr> <buffer> . <SID>CompleteDot()
     inoremap <expr> <buffer> > <SID>CompleteArrow()
-    if &filetype == 'cpp'
+    if &filetype == 'cpp' || &filetype == 'cuda'
       inoremap <expr> <buffer> : <SID>CompleteColon()
     endif
   endif
