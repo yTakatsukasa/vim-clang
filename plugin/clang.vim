@@ -1017,7 +1017,7 @@ func! s:ClangCompleteInit(force)
       let b:clang_options .= g:clang_cpp_options
     endif
   elseif &filetype == 'cuda'
-    let b:clang_options .= ' -x cuda '
+    let b:clang_options .= ' -x cuda -include ' . findfile('vim-clang-cuda.h', &runtimepath) . ' '
     if ! l:is_ow
       let b:clang_options .= g:clang_cuda_options
     endif
